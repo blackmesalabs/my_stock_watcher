@@ -105,8 +105,8 @@ def display_line( ansi, stock_info ):
   str = str + ":" + ("%.0f" % price_high ).rjust(3) + "]";
   str = str + ansi['reset'];
   str = str + my_color;
-  str = str + " " + ("%+.2f" % price_delta).ljust(3);
-  str = str + " " + ("%+2.1f%%" % change).ljust(3);
+  str = str + " " + ("%+.2f" % price_delta).rjust(6);
+  str = str + " " + ("%+2.1f%%" % change).rjust(6);
   str = str + my_color_reset;
   return str;
 
