@@ -69,6 +69,12 @@ def main():
   for each in sys.argv:
     if "-loop" in each:
       loop_mode = True;
+    if "-" not in each:
+      symbol = each;
+      stock_info = yf.Ticker( symbol );
+      print( stock_info.info );
+      return;
+
 
   loop_forever = True;
   while loop_forever:
