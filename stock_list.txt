@@ -1,3 +1,4 @@
+^GSPC
 AMD
 AMZN
 BAC

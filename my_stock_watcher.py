@@ -9,7 +9,7 @@
 # License:
 # This program is free software; you can redistribute it and/or modify it under
 # the terms of the GNU General Public License as published by the Free Software
-# Foundation; either version 2 of the License, or (at your option) any later
+# Foundation; either version 3 of the License, or (at your option) any later
 # version.
 #
 # This program is distributed in the hope that it will be useful, but WITHOUT
@@ -41,7 +41,7 @@
 # INTC
 # NVDA
 
-import sys,platform,os;
+import sys,platform,os,time;
 import yfinance as yf
 
 def main():
@@ -65,17 +65,30 @@ def main():
 # stock_list = file2list( args[1] );
   stock_list = file2list( "stock_list.txt" );
 
-  for each_stock in stock_list:
-    words = " ".join(each_stock.split()).split(' ') + [None] * 4;
-    symbol = words[0];
-    stock_info = yf.Ticker( symbol );
-    print( display_line(ansi, stock_info ) );
+  loop_mode = False;
+  for each in sys.argv:
+    if "-loop" in each:
+      loop_mode = True;
+
+  loop_forever = True;
+  while loop_forever:
+    for each_stock in stock_list:
+      words = " ".join(each_stock.split()).split(' ') + [None] * 4;
+      symbol = words[0];
+      stock_info = yf.Ticker( symbol );
+      print( display_line(ansi, stock_info ) );
+    loop_forever = loop_mode;
+    time.sleep( 15*60 );
   return;
 
 def display_line( ansi, stock_info ):
   symbol     = stock_info.info["symbol"];
 # name       = stock_info.info["longName"];
-  price_new  = stock_info.info["currentPrice"];
+  if stock_info.info.get("currentPrice"):
+    price_new  = stock_info.info["currentPrice"];
+  else:
+    price_new  = stock_info.info["bid"];# ^GSPC doesn't have currentPrice
+
   price_old  = stock_info.info["previousClose"];
   price_low  = stock_info.info["fiftyTwoWeekLow"];
   price_high = stock_info.info["fiftyTwoWeekHigh"];
@@ -97,17 +110,33 @@ def display_line( ansi, stock_info ):
   else:
     my_color = ansi['dim'];
 
+  # Highlight if within 10% of 52wk Low or High
+  low_percent =   ( price_new / price_low  );
+  high_percent =  ( price_new / price_high );
+
+  w52_h = "";
+  w52_l = "";
+  if high_percent > 0.90:
+    w52_h = ansi['bold']+ansi['fg_grn'];
+  else:
+    w52_h = ansi['dim'];
+  if low_percent < 1.10:
+    w52_l = ansi['bold']+ansi['fg_red'];
+  else:
+    w52_l = ansi['dim'];
+
   str = my_bold;
-  str = str + symbol.ljust(5);
-  str = str + " " + ("%.2f" % price_new).rjust(6);
-  str = str + ansi['dim'];
-  str = str + " [" + ("%.0f" % price_low  ).ljust(3);
-  str = str + ":" + ("%.0f" % price_high ).rjust(3) + "]";
+  str = str + symbol.ljust(6);
+  str = str + " " + ("%.2f" % price_new).rjust(7);
+# str = str + ansi['dim'];
+  str = str + " [" + w52_l + ("%.0f" % price_low  ).ljust(4) + my_color_reset;
+  str = str + ansi['dim'] + ":" + w52_h + ("%.0f" % price_high ).rjust(4) + my_color_reset + "]";
   str = str + ansi['reset'];
   str = str + my_color;
   str = str + " " + ("%+.2f" % price_delta).rjust(6);
   str = str + " " + ("%+2.1f%%" % change).rjust(6);
   str = str + my_color_reset;
+# str = str + "%f %f" % ( low_percent, high_percent );
   return str;
 
 def file2list( file_name ):
